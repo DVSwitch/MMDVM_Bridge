@@ -1,0 +1,19 @@
+[Unit]
+Description=Download data files for DVSwitch
+Before=mmdvm_bridge.service analog_bridge.service nxdngateway.service ircddbgatewayd.service p25gateway.service ysfgateway.service
+
+After=network-online.target syslog.target netcheck.service
+Requires=netcheck.service
+Wants=network-online.target
+
+# ConditionFileIsExecutable=/usr/bin/ssh-keygen
+
+[Service]
+Type=oneshot
+ExecStartPre = /bin/sh -c 'echo "Running datafile update: [`date +%%T.%%3N`]" >> /var/log/netcheck'
+ExecStart=/usr/local/sbin/DVSM_Update.sh
+ExecStartPost=/bin/systemctl disable update_data_files
+
+[Install]
+WantedBy=multi-user.target
+
