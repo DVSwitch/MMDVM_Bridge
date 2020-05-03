@@ -1,6 +1,6 @@
 [Unit]
 Description=Download data files for DVSwitch
-Before=mmdvm_bridge.service analog_bridge.service nxdngateway.service ircddbgatewayd.service p25gateway.service ysfgateway.service
+# Before=mmdvm_bridge.service
 
 After=network-online.target syslog.target netcheck.service
 Requires=netcheck.service
