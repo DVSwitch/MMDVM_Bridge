@@ -21,7 +21,7 @@
 #DEBUG=echo
 #set -xv   # this line will enable debug
 
-SCRIPT_VERSION="dvswitch.sh 1.5.4"
+SCRIPT_VERSION="dvswitch.sh 1.5.5"
 
 AB_DIR=${AB_DIR:-"/var/lib/dvswitch"}
 MMDVM_DIR=${MMDVM_DIR:-"/var/lib/mmdvm"}
@@ -834,6 +834,37 @@ function lookup() {
 }
 
 #################################################################
+# Get version information from AB and MB
+#################################################################
+function appVersion() {
+    if [ $# -eq 0 ]; then
+        echo $SCRIPT_VERSION
+    else
+        case $1 in
+            ab|AB|Analog_Bridge)
+                if [ -f "$AB_DIR/Analog_Bridge" ]; then
+                    "$AB_DIR/Analog_Bridge" -v
+                else
+                    getABInfoValue ab version
+                fi
+            ;;
+            mb|MB|MMDVM_Bridge)
+                if [ -f "$MMDVM_DIR/MMDVM_Bridge" ]; then
+                    "$MMDVM_DIR/MMDVM_Bridge" -v
+                else
+                    echo UNKNOWN
+                fi
+            ;;
+            all|ALL)
+                appVersion
+                appVersion ab
+                appVersion mb
+            ;;
+        esac
+    fi
+}
+
+#################################################################
 # Show usage string to someone who wants to know the available options
 #################################################################
 function usage() {
@@ -841,7 +872,7 @@ function usage() {
     echo -e "$0 \n\t { version | mode | tune | ambesize | ambemode | slot | update | tlvAudio | usrpAudio | usrpCodec | tlvPorts | "
     echo -e "\t   info | show | lookup | mute | message | macro |"
     echo -e "\t   pushfile | collectProcessDataFiles | collectProcessPushDataFiles | pushurl | collectProcessPushDataFilesHTTP }"
-    echo -e "\t version {AB}\t\t\t\t\t Show version of dvswitch.sh or Analog_Bridge"
+    echo -e "\t version {AB|MB|ALL}\t\t\t\t Show version of dvswitch.sh, Analog_Bridge or MMDVM_Bridge"
     echo -e "\t mode {DMR|NXDN|P25|YSF|DSTAR} \t\t\t Set Analog_Bridge digital mode"
     echo -e "\t tune tg \t\t\t\t\t Tune to specific TG/Reflector"
     echo -e "\t ambesize {72|88|49}\t\t\t\t Set number of bits for ambe data"
@@ -888,11 +919,7 @@ else
             collectProcessDataFiles
         ;;
         version|-v)
-            if [ $# -eq 1 ]; then
-                echo $SCRIPT_VERSION
-            else
-                getABInfoValue ab version
-            fi
+            appVersion $2
         ;;
         *)
             # All the commands below require that a valid ABInfo file exists.  
