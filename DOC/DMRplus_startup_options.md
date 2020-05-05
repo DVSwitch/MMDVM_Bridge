@@ -31,7 +31,7 @@ Here is a quick explaination about the options to be set:
   Note:
   For XLK the synatax is:
   Options=XLX:4009
-  ## For XLX make sure you are using a 7 digit DMR ID
+  For XLX make sure you are using a 7 digit DMR ID
 
 ---
 Info created by DG9VH 2016-11-11
