@@ -29,6 +29,7 @@ Here is a quick explaination about the options to be set:
   * TS1_5: This is the fifth of 5 talkgroups that could be set static, in example: TG270
   
   Note:
+  
   For XLK the synatax is:
   Options=XLX:4009
   
