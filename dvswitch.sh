@@ -21,7 +21,7 @@
 #DEBUG=echo
 #set -xv   # this line will enable debug
 
-SCRIPT_VERSION="dvswitch.sh 1.5.5"
+SCRIPT_VERSION="dvswitch.sh 1.5.6"
 
 AB_DIR=${AB_DIR:-"/var/lib/dvswitch"}
 MMDVM_DIR=${MMDVM_DIR:-"/var/lib/mmdvm"}
@@ -347,11 +347,11 @@ function remoteControlCommand() {
     if [ ! -z "${DEBUG}" ]; then
         echo "remoteControlCommand $1"
     else
-python - <<END
+PYTHON_ARG="$1" python - <<END
 #!/usr/bin/env python
 try:
-    import sys, socket, struct
-    cmd = "$1".encode("utf-8")
+    import sys, socket, struct, os
+    cmd = os.environ['PYTHON_ARG'].replace("\\\" + "n", "\n").encode("utf-8")
     _sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     cmd = struct.pack("BB", 0x05, len(cmd))[0:2] + cmd
     _sock.sendto(cmd, ('$SERVER', $TLV_PORT))
@@ -771,8 +771,15 @@ function downloadDatabases() {
 
         declare isValid=`grep 3113043 "${MMDVM_DIR}/DMRIds.dat"`
         if [ -z "$isValid" ]; then
-            echo "Error, DMR ID file does not seem to be valid"
-            _ERRORCODE=$ERROR_INVALID_FILE
+
+            ${DEBUG} curl -s -N "http://registry.dstar.su/dmr/DMRIds.php" > "${MMDVM_DIR}/DMRIds.dat"
+            ${DEBUG} curl -s -N "http://registry.dstar.su/dmr/DMRIds.php" | awk -F, 'BEGIN{FS=" ";OFS=",";} NR>1 {if ($1 > "") print $1,$2,$3}' > "${AB_DIR}/subscriber_ids.csv"
+
+            isValid=`grep 3113043 "${MMDVM_DIR}/DMRIds.dat"`
+            if [ -z "$isValid" ]; then
+                echo "Error, DMR ID file does not seem to be valid"
+                _ERRORCODE=$ERROR_INVALID_FILE
+            fi
         fi
     else
         echo "Destination directory does not exist, aborting"
