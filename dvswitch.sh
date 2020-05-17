@@ -885,10 +885,10 @@ function getEnabledModes() {
         _NET=`parseIniFile "$MMDVM_INI" "${mode} Network" "Enable"`
         #echo "${mode} mode = ${_MODE} and Network = ${_NET}"
         if [ ${_MODE} == "1" ] && [ ${_NET} == "1" ]; then
-            enabledModes=`echo ${enabledModes} ${mode}`
+            enabledModes=`echo ${enabledModes}${mode}" " `
         fi
     done
-    echo "$1 ${enabledModes}"
+    echo "$1${enabledModes}"
 }
 
 #################################################################
@@ -1044,7 +1044,7 @@ else
                 ;;
                 getEnabledModes)
                     if [ $# -eq 1 ]; then   # No argument passed, just return the current value 
-                        getEnabledModes "Enabled Modes:"
+                        getEnabledModes "Enabled Modes: "
                     else
                         getEnabledModes "$2"
                     fi
