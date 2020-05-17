@@ -21,11 +21,12 @@
 #DEBUG=echo
 #set -xv   # this line will enable debug
 
-SCRIPT_VERSION="dvswitch.sh 1.5.6"
+SCRIPT_VERSION="dvswitch.sh 1.5.7"
 
 AB_DIR=${AB_DIR:-"/var/lib/dvswitch"}
 MMDVM_DIR=${MMDVM_DIR:-"/var/lib/mmdvm"}
 DVSWITCH_INI=${DVSWITCH_INI:-"/opt/MMDVM_Bridge/DVSwitch.ini"}
+MMDVM_INI=${MMDVM_INI:-"/opt/MMDVM_Bridge/MMDVM_Bridge.ini"}
 NODE_DIR=${NODE_DIR:-"/tmp"}
 
 # Default server and port assignment, but overridden by value in ABInfo
@@ -872,6 +873,25 @@ function appVersion() {
 }
 
 #################################################################
+# Echo the list of "enabled" modes in MB.ini
+#################################################################
+function getEnabledModes() {
+    # For each mode, disable the main section and the network
+    declare _MODE=""
+    declare _NET=""
+    declare enabledModes=""
+    for mode in DMR "System Fusion" P25 D-Star NXDN; do
+        _MODE=`parseIniFile "$MMDVM_INI" "${mode}" "Enable"`
+        _NET=`parseIniFile "$MMDVM_INI" "${mode} Network" "Enable"`
+        #echo "${mode} mode = ${_MODE} and Network = ${_NET}"
+        if [ ${_MODE} == "1" ] && [ ${_NET} == "1" ]; then
+            enabledModes=`echo ${enabledModes} ${mode}`
+        fi
+    done
+    echo "$1 ${enabledModes}"
+}
+
+#################################################################
 # Show usage string to someone who wants to know the available options
 #################################################################
 function usage() {
@@ -903,6 +923,7 @@ function usage() {
     echo -e "\t collectProcessPushDataFiles \t\t\t Collect, prepare and upload DVSM data files"
     echo -e "\t collectProcessPushDataFilesHTTP \t\t Collect, prepare and upload DVSM data files over http"
     echo -e "\t reloadDatabase \t\t\t\t Tell AB to reload database files into memory"
+    echo -e "\t getEnabledModes \t\t\t\t Return the list of "enabled" modes in MB.ini"
     exit 1
 }
 
@@ -1020,6 +1041,13 @@ else
                 ;;
                 usrpCommand|usrp)   # undocumented ATM/WIP
                     USRPCommand "$2" "$3"
+                ;;
+                getEnabledModes)
+                    if [ $# -eq 1 ]; then   # No argument passed, just return the current value 
+                        getEnabledModes "Enabled Modes:"
+                    else
+                        getEnabledModes "$2"
+                    fi
                 ;;
                 *)
                     # unknown option, update branch info (no option is specified, just ordered by placement)
