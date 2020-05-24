@@ -1,19 +1,10 @@
 [Unit]
 Description=MMDVM_Bridge Service
 # Description=Place this file in /lib/systemd/system
-# Description=N4IRS 04/30/2020
+# Description=N4IRS 04/20/2018
 
-# The device name should point to the
-# port the mmdvm is plugged into.
-# For USB ports (Arduino Due)
-# BindTo=dev-ttyACM0.device
-#
-# To make the network-online.target available
-# systemctl enable systemd-networkd-wait-online.service
-
-After=network-online.target syslog.target netcheck.service
+After=netcheck.service
 Requires=netcheck.service
-Wants=network-online.target
 
 [Service]
 Type=simple
