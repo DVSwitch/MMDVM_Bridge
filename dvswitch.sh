@@ -21,7 +21,7 @@
 #DEBUG=echo
 #set -xv   # this line will enable debug
 
-SCRIPT_VERSION="dvswitch.sh 1.5.7"
+SCRIPT_VERSION="dvswitch.sh 1.5.8"
 
 AB_DIR=${AB_DIR:-"/var/lib/dvswitch"}
 MMDVM_DIR=${MMDVM_DIR:-"/var/lib/mmdvm"}
@@ -600,7 +600,7 @@ END
 # validation (look for my node number)
 #################################################################
 function DownloadAndValidateASLNodeList() {
-    curl --fail -o "$NODE_DIR/$1" -s https://allstarlink.org/cgi-bin/allmondb.pl
+    curl --fail -s https://www.allstarlink.org/allmondb.php | sed -e :a -e '$d;N;2,7ba' -e 'P;D' > "$NODE_DIR/$1"
     declare isValid=`grep -i N4IRS "$NODE_DIR/$1"`
     if [ -z "${isValid}" ]; then
         rm "$NODE_DIR/$1"
