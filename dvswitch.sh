@@ -600,7 +600,13 @@ END
 # validation (look for my node number)
 #################################################################
 function DownloadAndValidateASLNodeList() {
+    declare _OS=$(uname -s)
     curl --fail -s https://www.allstarlink.org/allmondb.php | sed -e :a -e '$d;N;2,7ba' -e 'P;D' > "$NODE_DIR/$1"
+    if [ ${_OS} == Darwin ]; then
+        sed -i '' 's/||/|<None>|/g' "$NODE_DIR/$1"
+    else
+        sed -i 's/||/|<None>|/g' "$NODE_DIR/$1"
+    fi
     declare isValid=`grep -i N4IRS "$NODE_DIR/$1"`
     if [ -z "${isValid}" ]; then
         rm "$NODE_DIR/$1"
