@@ -21,7 +21,7 @@
 #DEBUG=echo
 #set -xv   # this line will enable debug
 
-SCRIPT_VERSION="dvswitch.sh 1.5.8"
+SCRIPT_VERSION="dvswitch.sh 1.5.9"
 
 AB_DIR=${AB_DIR:-"/var/lib/dvswitch"}
 MMDVM_DIR=${MMDVM_DIR:-"/var/lib/mmdvm"}
@@ -54,7 +54,7 @@ function getABInfoValue() {
 python - <<END
 #!/usr/bin/env python
 try:
-    import json, os
+    import json, os, sys
 
     json = json.loads(open("$_json_file").read())
     if "$2" == "":  # Not all values are enclosed in an object
@@ -66,6 +66,8 @@ try:
             value = json["$1"]["$2"]["$3"]
     print(value)
 except:
+    sys.stderr.write("getABInfoValue: error getting value(s) $1 $2 $3\n")
+    print("ERROR")
     exit(1)
 END
 }
@@ -95,6 +97,8 @@ try:
     config.read("$1")
     print( config.get('$2', '$3') )
 except:
+    sys.stderr.write("parseIniFile: Config parse error for file: $1\n")
+    print("ERROR")
     exit(1)
 END
 }
@@ -358,6 +362,7 @@ try:
     _sock.sendto(cmd, ('$SERVER', $TLV_PORT))
     _sock.close()
 except:
+    sys.stderr.write("remoteControlCommand: error sending command\n")
     exit(1)
 END
     fi
@@ -369,7 +374,7 @@ END
 function USRPCommand() {
 python - <<END
 #!/usr/bin/env python
-import traceback, struct, socket
+import traceback, struct, socket, sys
 try:
     usrpSeq = 1
     packetType = $1
@@ -380,6 +385,7 @@ try:
     udp.sendto(usrp, ("127.0.0.1", 12345))
     udp.close()
 except:
+    sys.stderr.write("USRPCommand: error sending command\n")
     traceback.print_exc()
 END
 }
@@ -404,6 +410,7 @@ try:
     _sock.sendto(cmd, ('$SERVER', $TLV_PORT))
     _sock.close()
 except:
+    sys.stderr.write("setCallAndID: error sending command\n")
     exit(1)
 END
     fi
@@ -439,6 +446,7 @@ try:
     _sock.sendto(cmd, ('$SERVER', $TLV_PORT))
     _sock.close()
 except:
+    sys.stderr.write("pushFileToClient: error pushing file $1\n")
     exit(1)
 END
     fi
@@ -483,6 +491,7 @@ try:
     _sock.sendto(cmd, ('$SERVER', $TLV_PORT))
     _sock.close()
 except:
+    sys.stderr.write("pushURLToClient: error sending URL $1\n")
     exit(1)
 END
 }
@@ -495,6 +504,7 @@ function ParseYSFile() {
     curl --fail -o "$NODE_DIR/$1" -s http://www.pistar.uk/downloads/$1
 python - <<END
 try:
+    import sys
     print("disconnect|||Unlink") # Make sure unlink is first in list
     f=open("$NODE_DIR/$1", "r")
     if f.mode == 'r':
@@ -509,6 +519,8 @@ try:
                 print(fields[3] + ":" + fields[4] + "|||" + fields[1])
         f.close()
 except:
+    sys.stderr.write("parseYSFile: error parsing file $1\n")
+    print("ERROR|||ERROR")
     exit(1)
 END
 }
@@ -520,6 +532,7 @@ function ParseTGFile() {
     curl --fail -o "$NODE_DIR/$1" -s http://www.pistar.uk/downloads/$1
 python - <<END
 try:
+    import sys
     print("4000|||Unlink") # Make sure unlink is first in list
     f=open("$NODE_DIR/$1", "r")
     if f.mode == 'r':
@@ -534,6 +547,8 @@ try:
                 print(fields[0] + "|||" + fields[2].split('_TG')[0].replace('_',' '))
         f.close()
 except:
+    sys.stderr.write("parseTGFile: error parsing $1\n")
+    print("ERROR|||ERROR")
     exit(1)
 END
 }
@@ -571,6 +586,7 @@ function ParseNodeFile() {
     curl --fail -o "$NODE_DIR/$1" -s http://www.pistar.uk/downloads/$1
 python - <<END
 try:
+    import sys
     print("9999|||Unlink") # Make sure unlink is first in list
     f=open("$NODE_DIR/$1", "r")
     if f.mode == 'r':
@@ -591,6 +607,8 @@ try:
                 state = 0
         f.close()
 except:
+    sys.stderr.write("parseNodeFile: error parsing $1\n")
+    print("ERROR|||ERROR")
     exit(1)
 END
 }
@@ -959,7 +977,7 @@ else
             # All the commands below require that a valid ABInfo file exists.  
             TLV_PORT=`getTLVPort`   # Get the communications port to use before we go further
             if [ -z $TLV_PORT ]; then
-                echo "Can not find /tmp/ABInfo file (have you run Analog_Brigde?), aborting" 
+                echo "Can not find /tmp/ABInfo file (have you run Analog_Bridge?), aborting" 
                 exit 1
             fi
             case $1 in
