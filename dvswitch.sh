@@ -21,6 +21,7 @@
 #DEBUG=echo
 #set -xv   # this line will enable debug
 
+
 SCRIPT_VERSION="dvswitch.sh 1.5.9"
 
 AB_DIR=${AB_DIR:-"/var/lib/dvswitch"}
@@ -51,7 +52,7 @@ _ERRORCODE=$SUCCESSS
 #################################################################
 function getABInfoValue() {
     declare _json_file=`getABInfoFileName`
-python - <<END
+python3 - <<END
 #!/usr/bin/env python
 try:
     import json, os, sys
@@ -89,11 +90,11 @@ function getABInfoFileName() {
 # parseIniFile fileName stanza tag
 #################################################################
 function parseIniFile() {
-python - <<END
+python3 - <<END
 #!/usr/bin/env python
 try:
-    import sys, ConfigParser
-    config = ConfigParser.ConfigParser()
+    import sys, configparser
+    config = configparser.ConfigParser(inline_comment_prefixes=(';',))
     config.read("$1")
     print( config.get('$2', '$3') )
 except:
@@ -352,7 +353,7 @@ function remoteControlCommand() {
     if [ ! -z "${DEBUG}" ]; then
         echo "remoteControlCommand $1"
     else
-PYTHON_ARG="$1" python - <<END
+PYTHON_ARG="$1" python3 - <<END
 #!/usr/bin/env python
 try:
     import sys, socket, struct, os
@@ -372,7 +373,7 @@ END
 # Compose a USRP packet and send it to AB (WIP: address and port)
 #################################################################
 function USRPCommand() {
-python - <<END
+python3 - <<END
 #!/usr/bin/env python
 import traceback, struct, socket, sys
 try:
@@ -397,7 +398,7 @@ function setCallAndID() {
     if [ ! -z "${DEBUG}" ]; then
         echo "setCallAndID $1"
     else
-python - <<END
+python3 - <<END
 #!/usr/bin/env python
 try:
     import sys, socket, struct
@@ -433,7 +434,7 @@ function pushFileToClient() {
             return
         fi
 
-python - <<END
+python3 - <<END
 #!/usr/bin/env python
 try:
     import sys, socket, struct
@@ -478,7 +479,7 @@ function pushLocalFileAsURLToClient() {
 # the name begins with http it is a URL.
 #################################################################
 function pushURLToClient() {
-python - <<END
+python3 - <<END
 #!/usr/bin/env python
 try:
     import sys, socket, struct
@@ -502,7 +503,7 @@ END
 
 function ParseYSFile() {
     curl --fail -o "$NODE_DIR/$1" -s http://www.pistar.uk/downloads/$1
-python - <<END
+python3 - <<END
 try:
     import sys
     print("disconnect|||Unlink") # Make sure unlink is first in list
@@ -530,7 +531,7 @@ END
 #################################################################
 function ParseTGFile() {
     curl --fail -o "$NODE_DIR/$1" -s http://www.pistar.uk/downloads/$1
-python - <<END
+python3 - <<END
 try:
     import sys
     print("4000|||Unlink") # Make sure unlink is first in list
@@ -584,7 +585,7 @@ function ParseDStarFile() {
 #################################################################
 function ParseNodeFile() {
     curl --fail -o "$NODE_DIR/$1" -s http://www.pistar.uk/downloads/$1
-python - <<END
+python3 - <<END
 try:
     import sys
     print("9999|||Unlink") # Make sure unlink is first in list
@@ -874,15 +875,15 @@ function appVersion() {
     else
         case $1 in
             ab|AB|Analog_Bridge)
-                if [ -f "$AB_DIR/Analog_Bridge" ]; then
-                    "$AB_DIR/Analog_Bridge" -v
+                if [ -f "/opt/Analog_Bridge/Analog_Bridge" ]; then
+                    "/opt/Analog_Bridge/Analog_Bridge" -v
                 else
                     getABInfoValue ab version
                 fi
             ;;
             mb|MB|MMDVM_Bridge)
-                if [ -f "$MMDVM_DIR/MMDVM_Bridge" ]; then
-                    "$MMDVM_DIR/MMDVM_Bridge" -v
+                if [ -f "/opt/MMDVM_Bridge/MMDVM_Bridge" ]; then
+                    "/opt/MMDVM_Bridge/MMDVM_Bridge" -v
                 else
                     echo UNKNOWN
                 fi
@@ -976,7 +977,7 @@ else
         *)
             # All the commands below require that a valid ABInfo file exists.  
             TLV_PORT=`getTLVPort`   # Get the communications port to use before we go further
-            if [ -z $TLV_PORT ]; then
+            if [ $TLV_PORT == "ERROR" ]; then
                 echo "Can not find /tmp/ABInfo file (have you run Analog_Bridge?), aborting" 
                 exit 1
             fi
@@ -1066,7 +1067,7 @@ else
                 usrpCommand|usrp)   # undocumented ATM/WIP
                     USRPCommand "$2" "$3"
                 ;;
-                getEnabledModes)
+                getEnabledModes|getenabledmodes|gem)
                     if [ $# -eq 1 ]; then   # No argument passed, just return the current value 
                         getEnabledModes "Enabled Modes: "
                     else
