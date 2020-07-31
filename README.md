@@ -2,13 +2,13 @@ These are the binaries for MMDVM_Bridge. These binaries should be the latest ver
 
 amd64 --- 64 bit Intel/AMD --- 3.16.0-4-amd64 #1 x86_64
 
-arm64 --- 64 bit ARM --- 5.3.0-1014-raspi2 aarch64 aarch64 aarch64
+arm64 --- 64 bit ARM --- 5.4.51-v8+ aarch64
 
 armhf --- RPi2/3 --- 4.9.35-v7+ armv7l
 
-armv6l --- RPi 1/Zero --- 4.14.98+ armv6l
+armv6l --- RPi 1/Zero --- 4.9.35+ armv6l
 
 i386 --- 32bit Intel/AMD --- 4.9.0-11-686-pae i686
 
-The key information you will see when you type "uname -a" Also, see the output of "dpkg --print-architecture"
+The key information you will see when you type "uname -m" Also, see the output of "dpkg --print-architecture"
 Once you have the binary downloaded to your host, you can rename the file to simply MMDVM_Bridge and replace the existing binary.
