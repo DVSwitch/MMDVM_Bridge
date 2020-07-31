@@ -441,9 +441,9 @@ try:
 
     TLV_TAG_FILE_XFER  = 11
     FILE_SUBCOMMAND_READ = 3
-    name = "$1".encode("utf-8")
+    name = "$1".encode("utf-8")+b'\x00'
     _sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    cmd = struct.pack("BBB", TLV_TAG_FILE_XFER, len(name)+2, FILE_SUBCOMMAND_READ)[0:3] + name + chr(0)
+    cmd = struct.pack("BBB", TLV_TAG_FILE_XFER, len(name)+1, FILE_SUBCOMMAND_READ)[0:3] + name
     _sock.sendto(cmd, ('$SERVER', $TLV_PORT))
     _sock.close()
 except:
@@ -486,9 +486,9 @@ try:
 
     TLV_TAG_FILE_XFER  = 11
     FILE_SUBCOMMAND_READ = 3
-    name = "$1".encode("utf-8")
+    name = "$1".encode("utf-8")+b'\x00'
     _sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    cmd = struct.pack("BBB", TLV_TAG_FILE_XFER, len(name)+2, FILE_SUBCOMMAND_READ)[0:3] + name + chr(0)
+    cmd = struct.pack("BBB", TLV_TAG_FILE_XFER, len(name)+1, FILE_SUBCOMMAND_READ)[0:3] + name
     _sock.sendto(cmd, ('$SERVER', $TLV_PORT))
     _sock.close()
 except:
