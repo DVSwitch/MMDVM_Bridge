@@ -974,6 +974,13 @@ else
         version|-v)
             appVersion $2
         ;;
+        getEnabledModes|getenabledmodes|gem)
+            if [ $# -eq 1 ]; then   # No argument passed, just return the current value 
+                getEnabledModes "Enabled Modes: "
+            else
+                getEnabledModes "$2"
+            fi
+        ;;
         *)
             # All the commands below require that a valid ABInfo file exists.  
             TLV_PORT=`getTLVPort`   # Get the communications port to use before we go further
@@ -1066,13 +1073,6 @@ else
                 ;;
                 usrpCommand|usrp)   # undocumented ATM/WIP
                     USRPCommand "$2" "$3"
-                ;;
-                getEnabledModes|getenabledmodes|gem)
-                    if [ $# -eq 1 ]; then   # No argument passed, just return the current value 
-                        getEnabledModes "Enabled Modes: "
-                    else
-                        getEnabledModes "$2"
-                    fi
                 ;;
                 *)
                     # unknown option, update branch info (no option is specified, just ordered by placement)
