@@ -44,6 +44,7 @@ ERROR_INVALID_ARGUMENT=-2
 ERROR_EMPTY_FILE=-3
 ERROR_DIR_NOT_FOUND=-4
 ERROR_INVALID_FILE=-5
+ERROR_LOOKUP_FAILED=-6
 _ERRORCODE=$SUCCESSS
 
 #################################################################
@@ -860,9 +861,15 @@ function prettyPrintInfo() {
 function lookup() {
     declare databaseName="${MMDVM_DIR}/DMRIds.dat"
     if [ -f "${databaseName}" ]; then
-        grep -i $1 "${databaseName}"
+        found=`grep -i $1 "${databaseName}"`
+        if [ -z "$found" ]; then
+            _ERRORCODE=$ERROR_LOOKUP_FAILED
+        else
+            echo $found
+        fi
     else
         echo DMR ID database file not found at ${databaseName}
+        _ERRORCODE=$ERROR_LOOKUP_FAILED
     fi
 }
 
@@ -914,6 +921,73 @@ function getEnabledModes() {
         fi
     done
     echo "$1${enabledModes}"
+}
+
+#################################################################
+# 
+#################################################################
+function getUDPPortOwner() {
+    if [ -z "$1" ]; then
+        echo "Argument required: port number"
+        _ERRORCODE=$ERROR_INVALID_ARGUMENT
+    else
+        declare port=":$1"
+        declare _OS=$(uname -s)
+
+        if [ ${_OS} == Darwin ]; then
+            declare pid=$(lsof -i udp$port -P +c 0 | awk 'NR>1 {print $2}')
+            if [ -z "$pid" ]; then
+                echo "No processes listening on port $port"
+            else
+                ps -f $pid | awk 'NR>1 {print $8 " " $9 " " $10}'
+            fi
+        else
+            declare pid=$(sudo netstat -unap | grep '$port' | awk '{print $6}' | cut -d'/' -f1)
+            if [ -z "$pid" ]; then
+                echo "No processes listening on port $port"
+            else
+                ps -f $pid | awk 'NR>1 {print $9 " " $10 " " $11}'
+            fi
+        fi
+    fi
+}
+
+#################################################################
+# 
+#################################################################
+function getUDPPortsForProcess() {
+    if [ -z "$1" ]; then
+        echo "Argument required: process name"
+        _ERRORCODE=$ERROR_INVALID_ARGUMENT
+    else
+        declare process="$1"
+        declare _OS=$(uname -s)
+
+        set -f;
+        if [ ${_OS} == Darwin ]; then
+            declare ports=($(lsof -i udp -P +c 0 | grep -i "$process" | awk '{if ($9 != "*:*") print $9}' | cut -d':' -f2))
+            declare name=$(lsof -i udp -P +c 0 | grep -i "$process" | awk 'NR==1 {print $1}')
+            if [ ! -z "$name" ]; then
+                echo "$name owns UDP ports: ${ports[@]}"
+            fi
+        else
+            declare ports=($(sudo netstat -unap | grep -i "$process" | awk '{split($4, a, ":"); print a[2]}'))
+            if [ ${#ports[@]} -gt 0 ]; then
+                declare name=$(sudo netstat -unap | grep ":${ports[0]}" | awk '{print $6}' | cut -d'/' -f2)
+                echo "$name owns UDP ports: ${ports[@]}"
+            fi
+        fi
+        set +f;
+    fi
+}
+
+#################################################################
+# 
+#################################################################
+function getUDPPortsForDVSwitch() {
+    for i in Analog_Bridge MMDVM_Bridge Quantar_Bridge P25gateway NXDNGateway DMRGateway YSFGateway ircddbgateway YSFParrot NXDNParrot md380-emu; do
+        getUDPPortsForProcess "$i"
+    done
 }
 
 #################################################################
@@ -979,6 +1053,16 @@ else
                 getEnabledModes "Enabled Modes: "
             else
                 getEnabledModes "$2"
+            fi
+        ;;
+        getUDPPortOwner|getudpportowner|gupo)
+            getUDPPortOwner "$2"
+        ;;
+        getUDPPortsForProcess|getudpportsforprocess|gupfp)
+            if [ -z "$2" ]; then
+                getUDPPortsForDVSwitch
+            else
+                getUDPPortsForProcess "$2"
             fi
         ;;
         *)
