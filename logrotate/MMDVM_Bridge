@@ -1,9 +1,8 @@
 /var/log/mmdvm/MMDVM_Bridge.log
 {
         daily
-        rotate 30
-        maxage 30
-#       dateyesterday
+        rotate 7
+        maxage 7
         dateext
         dateformat -%Y-%m-%d
         extension .log
