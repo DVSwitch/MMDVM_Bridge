@@ -783,6 +783,7 @@ function downloadDatabases() {
         ${DEBUG} curl -s -N "https://database.radioid.net/static/user.csv" | awk -F, 'NR>1 {if ($1 > "") print $1,$2,$3}' > "${MMDVM_DIR}/DMRIds.dat"
         ${DEBUG} curl -s -N "https://database.radioid.net/static/user.csv" | awk -F, 'BEGIN{OFS=",";} NR>1 {if ($1 > "") print $1,$2,$3}' > "${AB_DIR}/subscriber_ids.csv"
         ${DEBUG} curl -s -N "https://database.radioid.net/static/nxdn.csv" > "${MMDVM_DIR}/NXDN.csv"
+        ${DEBUG} curl -s -N "http://www.pistar.uk/downloads/DMR_Hosts.txt" > "${MMDVM_DIR}/DMR_Hosts.txt"
 
         downloadAndValidate "NXDNHosts.txt" "NXDN_Hosts.txt" "dvswitch.org"
         downloadAndValidate "P25Hosts.txt" "P25_Hosts.txt" "dvswitch.org"
@@ -895,6 +896,13 @@ function appVersion() {
                     echo UNKNOWN
                 fi
             ;;
+            gw|GW)
+                for gw in P25Gateway NXDNGateway YSFGateway; do
+                    if [ -f "/opt/$gw/$gw" ]; then
+                        "/opt/$gw/$gw" -v
+                    fi
+                done 
+            ;;
             all|ALL)
                 appVersion
                 appVersion ab
@@ -924,7 +932,7 @@ function getEnabledModes() {
 }
 
 #################################################################
-# 
+# Print out the owner for a specified UDP port
 #################################################################
 function getUDPPortOwner() {
     if [ -z "$1" ]; then
@@ -942,7 +950,7 @@ function getUDPPortOwner() {
                 ps -f $pid | awk 'NR>1 {print $8 " " $9 " " $10}'
             fi
         else
-            declare pid=$(sudo netstat -unap | grep '$port' | awk '{print $6}' | cut -d'/' -f1)
+            declare pid=$(sudo netstat -unap | grep "$port" | awk '{print $6}' | cut -d'/' -f1)
             if [ -z "$pid" ]; then
                 echo "No processes listening on port $port"
             else
@@ -953,7 +961,7 @@ function getUDPPortOwner() {
 }
 
 #################################################################
-# 
+# Print out the ports owned by a specified process
 #################################################################
 function getUDPPortsForProcess() {
     if [ -z "$1" ]; then
@@ -982,7 +990,7 @@ function getUDPPortsForProcess() {
 }
 
 #################################################################
-# 
+# Print out the ports for all DVSwitch processes
 #################################################################
 function getUDPPortsForDVSwitch() {
     for i in Analog_Bridge MMDVM_Bridge Quantar_Bridge P25gateway NXDNGateway DMRGateway YSFGateway ircddbgateway YSFParrot NXDNParrot md380-emu; do
@@ -998,7 +1006,7 @@ function usage() {
     echo -e "$0 \n\t { version | mode | tune | ambesize | ambemode | slot | update | tlvAudio | usrpAudio | usrpCodec | tlvPorts | "
     echo -e "\t   info | show | lookup | mute | message | macro |"
     echo -e "\t   pushfile | collectProcessDataFiles | collectProcessPushDataFiles | pushurl | collectProcessPushDataFilesHTTP }"
-    echo -e "\t version {AB|MB|ALL}\t\t\t\t Show version of dvswitch.sh, Analog_Bridge or MMDVM_Bridge"
+    echo -e "\t version {AB|MB|GW|ALL}\t\t\t\t Show version of dvswitch.sh, Analog_Bridge or MMDVM_Bridge"
     echo -e "\t mode {DMR|NXDN|P25|YSF|DSTAR} \t\t\t Set Analog_Bridge digital mode"
     echo -e "\t tune tg \t\t\t\t\t Tune to specific TG/Reflector"
     echo -e "\t ambesize {72|88|49}\t\t\t\t Set number of bits for ambe data"
@@ -1023,6 +1031,8 @@ function usage() {
     echo -e "\t collectProcessPushDataFilesHTTP \t\t Collect, prepare and upload DVSM data files over http"
     echo -e "\t reloadDatabase \t\t\t\t Tell AB to reload database files into memory"
     echo -e "\t getEnabledModes \t\t\t\t Return the list of "enabled" modes in MB.ini"
+    echo -e "\t getUDPPortOwner {UDP port}\t\t\t Print out the process owner for the specified port"
+    echo -e "\t getUDPPortsForProcess {process name|ALL}\t Print out the ports owned by the specified process (or all DVSwitch processes)"
     exit 1
 }
 
@@ -1059,7 +1069,7 @@ else
             getUDPPortOwner "$2"
         ;;
         getUDPPortsForProcess|getudpportsforprocess|gupfp)
-            if [ -z "$2" ]; then
+            if [ -z "$2" ] || [ $2 == "all" ] || [ $2 == "ALL" ]; then
                 getUDPPortsForDVSwitch
             else
                 getUDPPortsForProcess "$2"
