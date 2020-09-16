@@ -45,6 +45,7 @@ ERROR_EMPTY_FILE=-3
 ERROR_DIR_NOT_FOUND=-4
 ERROR_INVALID_FILE=-5
 ERROR_LOOKUP_FAILED=-6
+ERROR_INI_FAILURE=-7
 _ERRORCODE=$SUCCESSS
 
 #################################################################
@@ -907,6 +908,7 @@ function appVersion() {
                 appVersion
                 appVersion ab
                 appVersion mb
+                appVersion gw
             ;;
         esac
     fi
@@ -999,6 +1001,53 @@ function getUDPPortsForDVSwitch() {
 }
 
 #################################################################
+# 
+#################################################################
+function updateINIFileValue() {
+    declare _file="$1"
+    declare _section="$2"
+    declare _tag="$3"
+    declare _value="${@:4}"
+
+    if [ $# -ge 2 ]; then       # Do we have the correct number of arguments?
+        if [ -f ${_file} ]; then    # Check if the file exists (better error message then parseIniFile)
+            declare _secFound=$(grep -i "^\\[${_section}\\]" "${_file}")
+            if [ ! -z ${_secFound} ]; then  # See if the section exists
+                if [ ! -z ${_tag} ]; then
+                    declare _tagLine=$(sed  -n "/^\[${_section}\]/,/^\[/ p" "${_file}" | sed -n "/${_tag}/p")
+                    if [ ! -z "${_tagLine}" ]; then
+                        if [ ! -z "${_value}" ]; then
+                            declare _oldValue=`parseIniFile "${_file}" "${_section}" "${_tag}"`
+                            declare _oldLine="^${_tag}.*=.*${_oldValue}"
+                            declare _equal=`[[ "${_tagLine}" == *" = "* ]] && echo " = " || echo "="`
+                            declare _newLine="${_tag}${_equal}${_value}"
+                            sed -i -e "/^\[${_section}\]/,/^\[/ s/${_oldLine}/${_newLine}/" "${_file}"
+                        else
+                            echo "${_tagLine}"
+                        fi
+                    else
+                        echo "Error Tag \"${_tag}\" was not found in section \"${_section}\" of file \"${_file}\""
+                        _ERRORCODE=$ERROR_INI_FAILURE
+                    fi
+                else
+                    declare _fullSection=$(sed  -n "/^\[${_section}\]/,/^\[/ p" "${_file}")
+                    echo "${_fullSection}"
+                fi
+            else
+                echo "Error, section \"${_section}\" was not found in file \"${_file}\""
+                _ERRORCODE=$ERROR_INI_FAILURE
+            fi
+        else
+            echo "INI File \"${_file}\" not found"
+            _ERRORCODE=$ERROR_INI_FAILURE
+        fi
+    else
+        echo "Error, argument number: file section {tag} {value}"
+        _ERRORCODE=$ERROR_INI_FAILURE
+    fi
+}
+
+#################################################################
 # Show usage string to someone who wants to know the available options
 #################################################################
 function usage() {
@@ -1033,6 +1082,7 @@ function usage() {
     echo -e "\t getEnabledModes \t\t\t\t Return the list of "enabled" modes in MB.ini"
     echo -e "\t getUDPPortOwner {UDP port}\t\t\t Print out the process owner for the specified port"
     echo -e "\t getUDPPortsForProcess {process name|ALL}\t Print out the ports owned by the specified process (or all DVSwitch processes)"
+    echo -e "\t updateINIFileValue file section {tag} {value}\t Display or edit a tag in an INI file"
     exit 1
 }
 
@@ -1074,6 +1124,9 @@ else
             else
                 getUDPPortsForProcess "$2"
             fi
+        ;;
+        updateINIFileValue|updateinifilevalue|uifv)
+            updateINIFileValue "$2" $3 $4 $5 ${@:6}
         ;;
         *)
             # All the commands below require that a valid ABInfo file exists.  
@@ -1161,6 +1214,9 @@ else
                 ;;
                 ping)
                     setPingTimer "$2"
+                ;;
+                gps)
+                    remoteControlCommand "gps=$2,$3"
                 ;;
                 exitAB|exitab)
                     exitAnalogBridge $2 $3
