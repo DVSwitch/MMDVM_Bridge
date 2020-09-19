@@ -1048,6 +1048,26 @@ function updateINIFileValue() {
 }
 
 #################################################################
+# 
+#################################################################
+function setGpsToIP() {
+    declare ip=$(curl -s ifconfig.me)
+    declare json=$(curl -s -L ipvigilante.com/$ip)
+latlon=(`python3 - <<END
+#!/usr/bin/env python
+try:
+    import json, os, sys
+    json = json.loads('$json')
+    print(json['data']['latitude'])
+    print(json['data']['longitude'])
+except:
+    pass
+END
+`)
+    remoteControlCommand "gps=${latlon[0]},${latlon[1]}"
+}
+
+#################################################################
 # Show usage string to someone who wants to know the available options
 #################################################################
 function usage() {
@@ -1083,6 +1103,8 @@ function usage() {
     echo -e "\t getUDPPortOwner {UDP port}\t\t\t Print out the process owner for the specified port"
     echo -e "\t getUDPPortsForProcess {process name|ALL}\t Print out the ports owned by the specified process (or all DVSwitch processes)"
     echo -e "\t updateINIFileValue file section {tag} {value}\t Display or edit a tag in an INI file"
+    echo -e "\t gps lat long \t\t\t\t\t Set GPS coordinates for YSF to lat and long"
+    echo -e "\t setGpsToIP \t\t\t\t\t Set GPS coordinates for YSF to the lat and long of your public IP address"
     exit 1
 }
 
@@ -1217,6 +1239,9 @@ else
                 ;;
                 gps)
                     remoteControlCommand "gps=$2,$3"
+                ;;
+                setGpsToIP)
+                    setGpsToIP
                 ;;
                 exitAB|exitab)
                     exitAnalogBridge $2 $3
