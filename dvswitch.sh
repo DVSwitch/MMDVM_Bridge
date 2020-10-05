@@ -2,7 +2,7 @@
 
 #################################################################
 # /*
-#  * Copyright (C) 2019 N4IRR
+#  * Copyright (C) 2019, 2020 N4IRR
 #  *
 #  * Permission to use, copy, modify, and/or distribute this software for any
 #  * purpose with or without fee is hereby granted, provided that the above
@@ -22,7 +22,7 @@
 #set -xv   # this line will enable debug
 
 
-SCRIPT_VERSION="dvswitch.sh 1.5.9"
+SCRIPT_VERSION="1.5.9"
 
 AB_DIR=${AB_DIR:-"/var/lib/dvswitch"}
 MMDVM_DIR=${MMDVM_DIR:-"/var/lib/mmdvm"}
@@ -96,11 +96,13 @@ python3 - <<END
 #!/usr/bin/env python
 try:
     import sys, configparser
-    config = configparser.ConfigParser(inline_comment_prefixes=(';',))
-    config.read("$1")
+    with open("$1") as f:
+        file_content = '[dummy_section]\n' + f.read()
+    config = configparser.RawConfigParser(inline_comment_prefixes=(';',))
+    config.read_string(file_content)
     print( config.get('$2', '$3') )
 except:
-    sys.stderr.write("parseIniFile: Config parse error for file: $1\n")
+    sys.stderr.write("parseIniFile: Config parse error for file: $1.  Error: " + str(sys.exc_info()[1]) + "\n")
     print("ERROR")
     exit(1)
 END
@@ -880,7 +882,7 @@ function lookup() {
 #################################################################
 function appVersion() {
     if [ $# -eq 0 ]; then
-        echo $SCRIPT_VERSION
+        echo "dvswitch.sh version $SCRIPT_VERSION"
     else
         case $1 in
             ab|AB|Analog_Bridge)
@@ -1067,6 +1069,30 @@ END
     remoteControlCommand "gps=${latlon[0]},${latlon[1]}"
 }
 
+function parseAnyIniFile() {
+    if [ $# -ge 2 ]; then
+        case $1 in
+            AB|ab)
+                parseIniFile "/opt/Analog_Bridge/Analog_Bridge.ini" $2 $3
+            ;;
+            MB|mb)
+                parseIniFile "${MMDVM_INI}" $3 $3
+            ;;
+            DV|dv)
+                parseIniFile "${DVSWITCH_INI}" $2 $3
+            ;;
+            *)
+                if [ -f "$1" ]; then
+                    parseIniFile "$1" $2 $3
+                else
+                    echo "INI file $1 was not found"
+                fi
+            ;;
+        esac
+    else
+        echo "Wrong number of arguments: [path | AB | MB | DV] [section] [tag]"
+    fi
+}
 #################################################################
 # Show usage string to someone who wants to know the available options
 #################################################################
@@ -1149,6 +1175,9 @@ else
         ;;
         updateINIFileValue|updateinifilevalue|uifv)
             updateINIFileValue "$2" $3 $4 $5 ${@:6}
+        ;;
+        parseIniFile|parseinifile|pif)
+            parseAnyIniFile "$2" $3 $4
         ;;
         *)
             # All the commands below require that a valid ABInfo file exists.  
