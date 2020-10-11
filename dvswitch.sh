@@ -835,6 +835,8 @@ function setMode() {
                 ${DEBUG} setAmbeMode $_MODE
                 ${DEBUG} setTLVTxPort ${_MBRX}
                 ${DEBUG} setTLVRxPort ${_MBTX}
+                if [ $# -ge 2 ]; then ${DEBUG} setTLVGain $2; setTLVAudioType AUDIO_USE_GAIN; fi
+                if [ $# -ge 3 ]; then ${DEBUG} setUSRPGain $3; setUSRPAudioType AUDIO_USE_GAIN; fi
                 ${DEBUG} getInfo
             else
                 echo "Error, DVSwitch.ini file not found"
@@ -1014,7 +1016,7 @@ function updateINIFileValue() {
     if [ $# -ge 2 ]; then       # Do we have the correct number of arguments?
         if [ -f ${_file} ]; then    # Check if the file exists (better error message then parseIniFile)
             declare _secFound=$(grep -i "^\\[${_section}\\]" "${_file}")
-            if [ ! -z ${_secFound} ]; then  # See if the section exists
+            if [ ! -z "${_secFound}" ]; then  # See if the section exists
                 if [ ! -z ${_tag} ]; then
                     declare _tagLine=$(sed  -n "/^\[${_section}\]/,/^\[/ p" "${_file}" | sed -n "/${_tag}/p")
                     if [ ! -z "${_tagLine}" ]; then
@@ -1174,7 +1176,7 @@ else
             fi
         ;;
         updateINIFileValue|updateinifilevalue|uifv)
-            updateINIFileValue "$2" $3 $4 $5 ${@:6}
+            updateINIFileValue "$2" "$3" $4 $5 ${@:6}
         ;;
         parseIniFile|parseinifile|pif)
             parseAnyIniFile "$2" $3 $4
@@ -1188,7 +1190,7 @@ else
             fi
             case $1 in
                 mode)
-                    setMode $2
+                    setMode $2 $3 $4
                 ;;
                 tune)
                     ${DEBUG} tune $2
