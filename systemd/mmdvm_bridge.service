@@ -1,7 +1,7 @@
 [Unit]
 Description=MMDVM_Bridge Service
 # Description=Place this file in /lib/systemd/system
-# Description=N4IRS 04/20/2018
+# Description=N4IRS 10/16/2020
 
 After=netcheck.service
 Requires=netcheck.service
@@ -13,7 +13,6 @@ RestartSec=3
 Restart=on-abort
 StandardOutput=null
 WorkingDirectory=/opt/MMDVM_Bridge
-# Environment=DVSWITCH=/etc/MMDVM_Bridge/DVSwitch.ini
 ExecStartPre = /bin/sh -c 'echo "Starting MMDVM_Bridge: [`date +%%T.%%3N`]" >> /var/log/netcheck'
 ExecStart=/opt/MMDVM_Bridge/MMDVM_Bridge /opt/MMDVM_Bridge/MMDVM_Bridge.ini
 ExecReload=/bin/kill -HUP $MAINPID
