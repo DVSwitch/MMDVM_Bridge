@@ -22,7 +22,7 @@
 #set -xv   # this line will enable debug
 
 
-SCRIPT_VERSION="1.5.9"
+SCRIPT_VERSION="1.6.0"
 
 AB_DIR=${AB_DIR:-"/var/lib/dvswitch"}
 MMDVM_DIR=${MMDVM_DIR:-"/var/lib/mmdvm"}
@@ -1025,7 +1025,7 @@ function updateINIFileValue() {
                             declare _oldLine="^${_tag}.*=.*${_oldValue}"
                             declare _equal=`[[ "${_tagLine}" == *" = "* ]] && echo " = " || echo "="`
                             declare _newLine="${_tag}${_equal}${_value}"
-                            sed -i -e "/^\[${_section}\]/,/^\[/ s/${_oldLine}/${_newLine}/" "${_file}"
+                            sed -i -e "/^\[${_section}\]/,/^\[/ s/${_oldLine}/${_newLine}/i" "${_file}"
                         else
                             echo "${_tagLine}"
                         fi
@@ -1085,7 +1085,7 @@ function parseAnyIniFile() {
             ;;
             *)
                 if [ -f "$1" ]; then
-                    parseIniFile "$1" $2 $3
+                    parseIniFile "$1" "$2" $3
                 else
                     echo "INI file $1 was not found"
                 fi
@@ -1179,7 +1179,7 @@ else
             updateINIFileValue "$2" "$3" $4 $5 ${@:6}
         ;;
         parseIniFile|parseinifile|pif)
-            parseAnyIniFile "$2" $3 $4
+            parseAnyIniFile "$2" "$3" $4
         ;;
         *)
             # All the commands below require that a valid ABInfo file exists.  
