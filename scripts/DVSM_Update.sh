@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 set -o errexit
 
-# N4IRS 01/17/2020
+# N4IRS 10/30/2020
+# Version 1.6.0
 
 #################################################
 #                                               #
-#                                               #
+# Download updated host files and setup links   #
 #                                               #
 #################################################
 
-# Start here
+# Use dvswitch.sh to get the host files
 /opt/MMDVM_Bridge/dvswitch.sh update
 
+# create symbolic links for ircddbgateway
 DIR="/usr/share/ircddbgateway/"
 if [ -d "$DIR" ]; then
         rm /usr/share/ircddbgateway/DCS_Hosts.txt
@@ -23,6 +25,7 @@ if [ -d "$DIR" ]; then
         ln -s /var/lib/mmdvm/DPlus_Hosts.txt /usr/share/ircddbgateway/DPlus_Hosts.txt
 fi
 
+# if private host file(s) do not exist create empty ones
 FILE="/var/lib/mmdvm/private_NXDNHosts.txt"
 if [ ! -f "$FILE" ]; then
         touch $FILE
