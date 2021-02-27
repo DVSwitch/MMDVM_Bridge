@@ -2,7 +2,7 @@
 
 #################################################################
 # /*
-#  * Copyright (C) 2019, 2020 N4IRR
+#  * Copyright (C) 2019, 2020, 2021 N4IRR
 #  *
 #  * Permission to use, copy, modify, and/or distribute this software for any
 #  * purpose with or without fee is hereby granted, provided that the above
@@ -22,7 +22,7 @@
 #set -xv   # this line will enable debug
 
 
-SCRIPT_VERSION="1.6.0"
+SCRIPT_VERSION="1.6.1"
 
 AB_DIR=${AB_DIR:-"/var/lib/dvswitch"}
 MMDVM_DIR=${MMDVM_DIR:-"/var/lib/mmdvm"}
@@ -367,7 +367,8 @@ try:
     _sock.sendto(cmd, ('$SERVER', $TLV_PORT))
     _sock.close()
 except:
-    sys.stderr.write("remoteControlCommand: error sending command\n")
+    print('$SERVER', '$TLV_PORT')
+    sys.stderr.write("remoteControlCommand: error sending command " + str(sys.exc_info()[1]) + "\n")
     exit(1)
 END
     fi
@@ -588,7 +589,11 @@ function ParseDStarFile() {
 # A general function to parse MMDVM host files
 #################################################################
 function ParseNodeFile() {
-    curl --fail -o "$NODE_DIR/$1" -s http://www.pistar.uk/downloads/$1
+    if [ -z "$2" ]; then
+        curl --fail -o "$NODE_DIR/$1" -s http://www.pistar.uk/downloads/$1
+    else
+        curl --fail -o "$NODE_DIR/$1" -s "$2"
+    fi
 python3 - <<END
 try:
     import sys
@@ -642,11 +647,12 @@ function DownloadAndValidateASLNodeList() {
 #################################################################
 function collectProcessDataFiles() {
 
+    declare gitURL="https://raw.githubusercontent.com/g4klx"
     echo "Processing NXDN"
-    ParseNodeFile NXDN_Hosts.txt > $NODE_DIR/NXDN_node_list.txt 2>/dev/null
+    ParseNodeFile NXDN_Hosts.txt "${gitURL}/NXDNClients/master/NXDNGateway/NXDNHosts.txt" > $NODE_DIR/NXDN_node_list.txt 2>/dev/null
 
     echo "Processing P25"
-    ParseNodeFile P25_Hosts.txt > $NODE_DIR/P25_node_list.txt 2>/dev/null
+    ParseNodeFile P25_Hosts.txt "${gitURL}/P25Clients/master/P25Gateway/P25Hosts.txt" > $NODE_DIR/P25_node_list.txt 2>/dev/null
 
     echo "Processing DMR"
     ParseTGFile TGList_BM.txt > $NODE_DIR/DMR_node_list.txt 2>/dev/null
@@ -826,7 +832,7 @@ function setMode() {
         echo `getABInfoValue tlv ambe_mode`
     else
         declare _MODE=`echo $1 | tr '[:lower:]' '[:upper:]'`
-        if [[ "DMRYSFP25NXDNDSTAR" == *"$_MODE"* ]]; then
+        if [[ "|DMR|YSF|P25|NXDN|DSTAR|ASL|STFU|" == *"$_MODE"* ]]; then
             ${DEBUG} setTLVRxPort 30000  # cause AB to stop listening
             _MBTX=`parseIniFile "$DVSWITCH_INI" "$_MODE" "TXPort"`
             _MBRX=`parseIniFile "$DVSWITCH_INI" "$_MODE" "RXPort"`
@@ -843,7 +849,7 @@ function setMode() {
                 _ERRORCODE=$ERROR_FILE_NOT_FOUND
             fi
         else
-            echo "Error, Mode must be DMR or YSF or P25 or DSTAR or NXDN"
+            echo "Error, Mode must be DMR or YSF or P25 or DSTAR, NXDN, ASL or STFU"
             _ERRORCODE=$ERROR_INVALID_ARGUMENT
         fi
     fi
@@ -891,14 +897,15 @@ function appVersion() {
                 if [ -f "/opt/Analog_Bridge/Analog_Bridge" ]; then
                     "/opt/Analog_Bridge/Analog_Bridge" -v
                 else
-                    getABInfoValue ab version
+                    declare _ver=`getABInfoValue ab version`
+                    echo "Analog_Bridge version ${_ver}"
                 fi
             ;;
             mb|MB|MMDVM_Bridge)
                 if [ -f "/opt/MMDVM_Bridge/MMDVM_Bridge" ]; then
                     "/opt/MMDVM_Bridge/MMDVM_Bridge" -v
                 else
-                    echo UNKNOWN
+                    echo "MMDVM_Bridge version UNKNOWN"
                 fi
             ;;
             gw|GW)
@@ -908,11 +915,19 @@ function appVersion() {
                     fi
                 done 
             ;;
+            path)
+                if [ -f "$2" ]; then
+                    "$2" -v
+                fi
+            ;;
             all|ALL)
                 appVersion
-                appVersion ab
-                appVersion mb
-                appVersion gw
+                for app in ab mb gw; do
+                    appVersion $app
+                done
+                for app in Analog_Reflector STFU; do
+                    appVersion path "/opt/${app}/${app}"
+                done                
             ;;
         esac
     fi
@@ -999,7 +1014,7 @@ function getUDPPortsForProcess() {
 # Print out the ports for all DVSwitch processes
 #################################################################
 function getUDPPortsForDVSwitch() {
-    for i in Analog_Bridge MMDVM_Bridge Quantar_Bridge P25gateway NXDNGateway DMRGateway YSFGateway ircddbgateway YSFParrot NXDNParrot md380-emu; do
+    for i in Analog_Bridge MMDVM_Bridge Quantar_Bridge Analog_Reflector STFU P25Gateway NXDNGateway DMRGateway YSFGateway ircddbgateway YSFParrot NXDNParrot md380-emu; do
         getUDPPortsForProcess "$i"
     done
 }
@@ -1085,7 +1100,7 @@ function parseAnyIniFile() {
             ;;
             *)
                 if [ -f "$1" ]; then
-                    parseIniFile "$1" "$2" $3
+                    parseIniFile "$1" $2 $3
                 else
                     echo "INI file $1 was not found"
                 fi
@@ -1179,7 +1194,7 @@ else
             updateINIFileValue "$2" "$3" $4 $5 ${@:6}
         ;;
         parseIniFile|parseinifile|pif)
-            parseAnyIniFile "$2" "$3" $4
+            parseAnyIniFile "$2" $3 $4
         ;;
         *)
             # All the commands below require that a valid ABInfo file exists.  
@@ -1270,6 +1285,9 @@ else
                 ;;
                 gps)
                     remoteControlCommand "gps=$2,$3"
+                ;;
+                exit)
+                    remoteControlCommand "exit=0 0"
                 ;;
                 setGpsToIP)
                     setGpsToIP
