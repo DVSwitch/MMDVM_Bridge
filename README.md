@@ -6,8 +6,6 @@ arm64 --- 64 bit ARM --- 5.4.51-v8+ aarch64
 
 armhf --- RPi2/3 --- 4.9.35-v7+ armv7l
 
-armv6l --- RPi 1/Zero --- 4.9.35+ armv6l
-
 i386 --- 32bit Intel/AMD --- 4.9.0-11-686-pae i686
 
 The key information you will see when you type "uname -m" Also, see the output of "dpkg --print-architecture"
