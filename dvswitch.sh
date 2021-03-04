@@ -1187,7 +1187,9 @@ else
             if [ -z "$2" ] || [ $2 == "all" ] || [ $2 == "ALL" ]; then
                 getUDPPortsForDVSwitch
             else
-                getUDPPortsForProcess "$2"
+                for i in "${@:1}"; do
+                    getUDPPortsForProcess "$i"
+                done
             fi
         ;;
         updateINIFileValue|updateinifilevalue|uifv)
