@@ -629,7 +629,7 @@ END
 #################################################################
 function DownloadAndValidateASLNodeList() {
     declare _OS=$(uname -s)
-    curl --fail -s https://www.allstarlink.org/allmondb.php | sed -e :a -e '$d;N;2,7ba' -e 'P;D' > "$NODE_DIR/$1"
+    curl --fail -s http://www.allstarlink.org/allmondb.php | sed -e :a -e '$d;N;2,7ba' -e 'P;D' > "$NODE_DIR/$1"
     if [ ${_OS} == Darwin ]; then
         sed -i '' 's/||/|<None>|/g' "$NODE_DIR/$1"
     else
@@ -994,16 +994,14 @@ function getUDPPortsForProcess() {
 
         set -f;
         if [ ${_OS} == Darwin ]; then
-            declare ports=($(lsof -i udp -P +c 0 | grep -i "$process" | awk '{if ($9 != "*:*") print $9}' | cut -d':' -f2))
-            declare name=$(lsof -i udp -P +c 0 | grep -i "$process" | awk 'NR==1 {print $1}')
-            if [ ! -z "$name" ]; then
-                echo "$name owns UDP ports: ${ports[@]}"
+            declare ports=($(lsof -i udp -P +c 0 | grep -i "${process:0:14}" | awk '{if ($9 != "*:*") print $9}' | cut -d':' -f2))
+            if [ ${#ports[@]} -gt 0 ]; then
+                echo "$process owns UDP ports: ${ports[@]}"
             fi
         else
-            declare ports=($(sudo netstat -unap | grep -i "$process" | awk '{split($4, a, ":"); print a[2]}'))
+            declare ports=($(sudo netstat -unap | grep -i "${process:0:14}" | awk '{split($4, a, ":"); print a[2]}'))
             if [ ${#ports[@]} -gt 0 ]; then
-                declare name=$(sudo netstat -unap | grep ":${ports[0]}" | awk '{print $6}' | cut -d'/' -f2)
-                echo "$name owns UDP ports: ${ports[@]}"
+                echo "$process owns UDP ports: ${ports[@]}"
             fi
         fi
         set +f;
