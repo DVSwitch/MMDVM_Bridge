@@ -629,7 +629,7 @@ END
 #################################################################
 function DownloadAndValidateASLNodeList() {
     declare _OS=$(uname -s)
-    curl --fail -s http://www.allstarlink.org/allmondb.php | sed -e :a -e '$d;N;2,7ba' -e 'P;D' > "$NODE_DIR/$1"
+    curl --fail -s https://allmondb.allstarlink.org/allmondb.php | sed -e :a -e '$d;N;2,7ba' -e 'P;D' > "$NODE_DIR/$1"
     if [ ${_OS} == Darwin ]; then
         sed -i '' 's/||/|<None>|/g' "$NODE_DIR/$1"
     else
