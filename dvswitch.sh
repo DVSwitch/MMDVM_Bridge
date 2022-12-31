@@ -803,7 +803,7 @@ function downloadDatabases() {
         downloadAndValidate "DCS_Hosts.txt" "DCS_Hosts.txt" "DCS006"
         downloadAndValidate "DPlus_Hosts.txt" "DPlus_Hosts.txt" "REF030"
         downloadAndValidate "DExtra_Hosts.txt" "DExtra_Hosts.txt" "XRF012"
-        downloadAndValidate "XLXHosts.txt" "XLXHosts.txt" "000"
+        downloadAndValidate "XLXHosts.txt" "XLXHosts.txt" "001"
         downloadAndValidate "APRS_Hosts.txt" "APRS_Hosts.txt" "noam.aprs2.net"
 
         declare isValid=`grep 3113043 "${MMDVM_DIR}/DMRIds.dat"`
