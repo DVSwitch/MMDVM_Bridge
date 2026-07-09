@@ -1,0 +1,25 @@
+[Unit]
+Description=MMDVM_Bridge Service
+# Description=Place this file in /lib/systemd/system
+# Description=N4IRS 07/01/2024
+
+After=netcheck.service
+Requires=netcheck.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+Restart=on-abort
+StandardOutput=null
+WorkingDirectory=/opt/MMDVM_Bridge
+ExecStartPre = /usr/bin/sh -c 'echo "Starting MMDVM_Bridge: [`date +%%T.%%3N`]" >> /var/log/netcheck'
+ExecStart=/opt/MMDVM_Bridge/MMDVM_Bridge /opt/MMDVM_Bridge/MMDVM_Bridge.ini
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+
+
+
